@@ -124,7 +124,6 @@
                     android:cursorVisible="true"
                     android:gravity="center|left|bottom"
                     android:hint="Address"
-                    android:inputType="number"
                     android:maxLength="50"
                     android:paddingBottom="10dp"
                     android:textColor="@color/black_effective"

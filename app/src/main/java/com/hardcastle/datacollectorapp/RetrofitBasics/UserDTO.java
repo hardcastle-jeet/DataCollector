@@ -1,39 +1,43 @@
 package com.hardcastle.datacollectorapp.RetrofitBasics;
 
+import java.util.ArrayList;
+
 public class UserDTO {
 
 
-    private String userName;
+    private String STATUS;
 
-    private String password;
+    private String MESSAGE;
 
-    private String email;
+    private ArrayList<UserDetails> DATA;
 
-
-
-
-
-    public String getUserName() {
-        return userName;
+    public UserDTO(String STATUS, String MESSAGE, ArrayList<UserDetails> DATA) {
+        this.STATUS = STATUS;
+        this.MESSAGE = MESSAGE;
+        this.DATA = DATA;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public String getSTATUS() {
+        return STATUS;
     }
 
-    public String getPassword() {
-        return password;
+    public void setSTATUS(String STATUS) {
+        this.STATUS = STATUS;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public String getMESSAGE() {
+        return MESSAGE;
     }
 
-    public String getEmail() {
-        return email;
+    public void setMESSAGE(String MESSAGE) {
+        this.MESSAGE = MESSAGE;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public ArrayList<UserDetails> getDATA() {
+        return DATA;
+    }
+
+    public void setDATA(ArrayList<UserDetails> DATA) {
+        this.DATA = DATA;
     }
 }

@@ -17,8 +17,8 @@
         app:showAsAction="ifRoom" />-->
 
     <item
-        android:id="@+id/action_add_poly"
-        android:icon="@mipmap/ic_done"
+        android:id="@+id/action_add_user"
+        android:icon="@android:drawable/ic_input_add"
         android:orderInCategory="100"
         android:title="addPoly"
         app:showAsAction="ifRoom" />

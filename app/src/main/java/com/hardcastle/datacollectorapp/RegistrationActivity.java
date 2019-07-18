@@ -40,6 +40,7 @@ public class RegistrationActivity extends AppCompatActivity {
         et_contact = findViewById(R.id.et_contact_no);
         et_password = findViewById(R.id.et_password);
         et_confirm_password = findViewById(R.id.et_confirm_password);
+        et_address=findViewById(R.id.et_address);
         if(progressDialog == null) {
             progressDialog = new ProgressDialog(this);
         }
@@ -92,9 +93,13 @@ public class RegistrationActivity extends AppCompatActivity {
 
             String addressValue=et_address.getText().toString();
             String contactValue=et_contact.getText().toString();
+            String adminIdValue="";
+            if (getIntent().getStringExtra("from")!=null){
+                adminIdValue=getIntent().getStringExtra("from");
+            }
 
             // Use default converter factory, so parse response body text to okhttp3.ResponseBody object.
-            Call<ResponseBody> call = UserManager.getUserManagerService(null).registerUser(emailValue,userNameValue, passwordValue,addressValue,contactValue);
+            Call<ResponseBody> call = UserManager.getUserManagerService(null).registerUser(emailValue,userNameValue, passwordValue,addressValue,contactValue,adminIdValue);
 
             // Create a Callback object, because we do not set JSON converter, so the return object is ResponseBody be default.
             retrofit2.Callback<ResponseBody> callback = new Callback<ResponseBody>() {
@@ -117,6 +122,7 @@ public class RegistrationActivity extends AppCompatActivity {
                             if (returnBodyText.equalsIgnoreCase("SUCCESS")) {
                                 // messageBuffer.append(registerResponse.getMessage());
                                 Toast.makeText(RegistrationActivity.this, "Successfully Registered", Toast.LENGTH_SHORT).show();
+                                finish();
                             } else if (returnBodyText.equalsIgnoreCase("ALREADY EXISTS")){
 
                                 Toast.makeText(RegistrationActivity.this, "User already exist", Toast.LENGTH_SHORT).show();

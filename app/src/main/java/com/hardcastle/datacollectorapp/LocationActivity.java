@@ -3,6 +3,7 @@ package com.hardcastle.datacollectorapp;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
@@ -58,6 +59,9 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.hardcastle.datacollectorapp.RetrofitBasics.UserDTO;
+import com.hardcastle.datacollectorapp.RetrofitBasics.UserDetails;
+import com.hardcastle.datacollectorapp.RetrofitBasics.UserManager;
 import com.hardcastle.mapofflinedemo.Model.DataModel;
 
 import java.text.DateFormat;
@@ -66,123 +70,106 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 
 public class LocationActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     public final static String MAP_OPTION = "map_option";
     public final static String DATA_MODEL = "data_model";
+    public static final String POINTS = "points";
     private static final String TAG = LocationActivity.class.getSimpleName();
-
     /**
      * Code used in requesting runtime permissions.
      */
     private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
-
     /**
      * Constant used in the location settings dialog.
      */
     private static final int REQUEST_CHECK_SETTINGS = 0x1;
-
     /**
      * The desired interval for location updates. Inexact. Updates may be more or less frequent.
      */
     private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
-
     /**
      * The fastest rate for active location updates. Exact. Updates will never be more frequent
      * than this value.
      */
     private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
             UPDATE_INTERVAL_IN_MILLISECONDS / 2;
-
     // Keys for storing activity state in the Bundle.
     private final static String KEY_REQUESTING_LOCATION_UPDATES = "requesting-location-updates";
     private final static String KEY_LOCATION = "location";
     private final static String KEY_LAST_UPDATED_TIME_STRING = "last-updated-time-string";
-
+    public static boolean mMapIsTouched = false;
+    private static boolean Is_MAP_Moveable = false;
+    private static String DRAWING_TYPE;
+    public double latitude;
+    public double longitude;
+    Projection projection;
+    PointDetailsModel selectedPoint;
+    ArrayList<PointDetailsModel> pointDetailsModelList;
+    UserDetails userDetails;
     /**
      * Provides access to the Fused Location Provider API.
      */
     private FusedLocationProviderClient mFusedLocationClient;
-
     /**
      * Provides access to the Location Settings API.
      */
     private SettingsClient mSettingsClient;
-
     /**
      * Stores parameters for requests to the FusedLocationProviderApi.
      */
     private LocationRequest mLocationRequest;
-
     /**
      * Stores the types of location services the client is interested in using. Used for checking
      * settings to determine if the device has optimal location settings.
      */
     private LocationSettingsRequest mLocationSettingsRequest;
-
     /**
      * Callback for Location events.
      */
     private LocationCallback mLocationCallback;
-
     /**
      * Represents a geographical location.
      */
     private Location mCurrentLocation;
-
     // UI Widgets.
     private Button mStartUpdatesButton;
     private Button mStopUpdatesButton;
     private TextView mLastUpdateTimeTextView;
     private TextView mLatitudeTextView;
     private TextView mLongitudeTextView;
-
     // Labels.
     private String mLatitudeLabel;
     private String mLongitudeLabel;
     private String mLastUpdateTimeLabel;
-
-    Projection projection;
-    public double latitude;
-    public double longitude;
     private GoogleMap mMap;
-
     private Polygon polygon;
     private Polyline polyline;
     private Circle circle;
     private ArrayList val = new ArrayList();
     private ArrayList finalPoints;
-
-    PointDetailsModel selectedPoint;
-
-    private static boolean Is_MAP_Moveable = false;
-    public static boolean mMapIsTouched = false;
-
     private PolygonOptions rectOptions;
     private PolylineOptions polylineOptions;
     private CircleOptions circleOptions;
-
     private List<Marker> markerList = new ArrayList<>();
     private List<LatLng> points = new ArrayList<>();
-
     /**
      * Tracks the status of the location updates request. Value changes when the user presses the
      * Start Updates and Stop Updates buttons.
      */
     private Boolean mRequestingLocationUpdates;
-
     /**
      * Time when the location was updated represented as a String.
      */
     private String mLastUpdateTime;
     private Marker myMarker;
-
-    private static String DRAWING_TYPE;
     private DataModel dataModel;
-    public static final String POINTS = "points";
-
+    private ProgressDialog progressDialog = null;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -191,6 +178,10 @@ public class LocationActivity extends AppCompatActivity implements OnMapReadyCal
         setContentView(R.layout.activity_location);
       /*  Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setActionBar(toolbar);*/
+
+
+        userDetails = getIntent().getParcelableExtra("Data");
+
 
         // GoogleMap myMap
         ((SupportMapFragment) getSupportFragmentManager()
@@ -211,7 +202,9 @@ public class LocationActivity extends AppCompatActivity implements OnMapReadyCal
 
         mRequestingLocationUpdates = false;
         mLastUpdateTime = "";
-
+        if (progressDialog == null) {
+            progressDialog = new ProgressDialog(this);
+        }
         // Update values using data stored in the Bundle.
         updateValuesFromBundle(savedInstanceState);
 
@@ -227,6 +220,55 @@ public class LocationActivity extends AppCompatActivity implements OnMapReadyCal
         createLocationCallback();
         createLocationRequest();
         buildLocationSettingsRequest();
+
+
+    }
+
+    private void getPointerLists() {
+
+
+        Call<ArrayList<PointDetailsModel>> call = UserManager.getUserManagerService(null).getPoints(userDetails.getUSER_ID());
+
+        // Create a Callback object, because we do not set JSON converter, so the return object is ResponseBody be default.
+        retrofit2.Callback<ArrayList<PointDetailsModel>> callback = new Callback<ArrayList<PointDetailsModel>>() {
+
+            // When server response.
+            @Override
+            public void onResponse(Call<ArrayList<PointDetailsModel>> call, Response<ArrayList<PointDetailsModel>> response) {
+
+                hideProgressDialog();
+
+                StringBuffer messageBuffer = new StringBuffer();
+                int statusCode = response.code();
+                Log.i("Prasann", statusCode + "");
+
+                // Get return string.
+                ArrayList<PointDetailsModel> returnBody = response.body();
+                //Log.i("PrasannLogin", returnBody.getSTATUS() + "");
+
+                if (statusCode == 200) {
+                    // messageBuffer.append(registerResponse.getMessage());
+                    // Toast.makeText(LocationActivity.this, "Successfully Logged", Toast.LENGTH_SHORT).show();
+                    pointDetailsModelList = new ArrayList<>();
+                    pointDetailsModelList.addAll(returnBody);
+
+                    for (int i = 0; i < pointDetailsModelList.size(); i++) {
+                        createMarker(pointDetailsModelList.get(i).getLatitude(), pointDetailsModelList.get(i).getLongitude());
+                    }
+                } else {
+                    messageBuffer.append("User Login failed.");
+                }
+            }
+
+
+            @Override
+            public void onFailure(Call<ArrayList<PointDetailsModel>> call, Throwable t) {
+                hideProgressDialog();
+                call.cancel();
+                Log.i("uvsjd", t.getMessage());
+            }
+        };
+        call.enqueue(callback);
     }
 
     public void Draw_Map() {
@@ -490,10 +532,11 @@ public class LocationActivity extends AppCompatActivity implements OnMapReadyCal
         }
     }
 
-    protected Marker createMarker(double latitude, double longitude) {
-
+    protected Marker createMarker(String latitude, String longitude) {
+        double lat = Double.parseDouble(latitude);
+        double longi = Double.parseDouble(longitude);
         myMarker = mMap.addMarker(new MarkerOptions()
-                .position(new LatLng(latitude, longitude))
+                .position(new LatLng(lat, longi))
                 /*  .title(title)
                   .snippet(snippet)*/
                 .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_place_marker)));
@@ -533,6 +576,8 @@ public class LocationActivity extends AppCompatActivity implements OnMapReadyCal
             requestPermissions();
         }
         updateUI();
+
+        getPointerLists();
     }
 
     @Override
@@ -760,17 +805,21 @@ public class LocationActivity extends AppCompatActivity implements OnMapReadyCal
                 if (DRAWING_TYPE != null) {
                     @SuppressLint("ResourceType") @IdRes int icon = R.mipmap.ic_place_marker;
                     //BitmapDescriptor bitmap = BitmapDescriptorFactory.fromBitmap(getDrawable(icon));
-                   if (selectedPoint==null) {
-                       Marker marker = mMap.addMarker(new MarkerOptions().position(latLng).icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_place_marker)).draggable(true));
-                       marker.setTag(latLng);
-                       //markerList.add(marker);
-                       //points.add(latLng);
-                   }
-                    selectedPoint=new PointDetailsModel(latLng,"","");
-                    Intent intent=new Intent(LocationActivity.this,AddPointDetailsActivity.class);
-                    intent.putExtra("Point",selectedPoint);
+                    //if (selectedPoint==null) {
+                    Marker marker = mMap.addMarker(new MarkerOptions().position(latLng).icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_place_marker)).draggable(true));
+                    marker.setTag(latLng);
+                    //markerList.add(marker);
+                    //points.add(latLng);
+                    // }
+                    // selectedPoint=new PointDetailsModel(latLng,"","");
+                    Intent intent = new Intent(LocationActivity.this, AddPointDetailsActivity.class);
+                    intent.putExtra("userId", userDetails.getUSER_ID());
+
+                    intent.putExtra("Latitude", latLng.latitude);
+                    intent.putExtra("Longitude", latLng.longitude);
+
                     startActivity(intent);
-                    selectedPoint=null;
+                    //selectedPoint=null;
 
                 }
                 if (DRAWING_TYPE.equals(String.valueOf(DrawingType.POLYLINE))) {
@@ -816,7 +865,13 @@ public class LocationActivity extends AppCompatActivity implements OnMapReadyCal
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_add_poly) {
+        if (id == R.id.action_add_user) {
+
+            Intent intent = new Intent(this, RegistrationActivity.class);
+            intent.putExtra("from", userDetails.getUSER_ID());
+            startActivity(intent);
+
+
             //calculatePolygonArea();
             /*if (DRAWING_TYPE.equals(String.valueOf(DrawingType.POLYLINE))) {
 
@@ -853,7 +908,7 @@ public class LocationActivity extends AppCompatActivity implements OnMapReadyCal
                 mMap.clear();
                 //polygon.remove();
                 //finalPoints.clear();
-               // val.clear();
+                // val.clear();
             }
             return true;
         }
@@ -875,6 +930,24 @@ public class LocationActivity extends AppCompatActivity implements OnMapReadyCal
             setResult(RESULT_CANCELED);
         }
         finish();
+    }
+
+    /* Show progress dialog. */
+    private void showProgressDialog() {
+        // Set progress dialog display message.
+        progressDialog.setMessage("Please Wait");
+
+        // The progress dialog can not be cancelled.
+        progressDialog.setCancelable(false);
+
+        // Show it.
+        progressDialog.show();
+    }
+
+    /* Hide progress dialog. */
+    private void hideProgressDialog() {
+        // Close it.
+        progressDialog.hide();
     }
 
 }

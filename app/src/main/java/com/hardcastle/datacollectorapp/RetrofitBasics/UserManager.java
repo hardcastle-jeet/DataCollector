@@ -2,6 +2,7 @@ package com.hardcastle.datacollectorapp.RetrofitBasics;
 
 import retrofit2.Converter;
 import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class UserManager {
 
@@ -11,7 +12,7 @@ public class UserManager {
     {
         // Create retrofit builder.
         Retrofit.Builder retrofitBuilder = new Retrofit.Builder();
-
+//
         // Set base url. All the @POST @GET url is relative to this url.
         retrofitBuilder.baseUrl(baseUrl);
 
@@ -22,7 +23,7 @@ public class UserManager {
         }
 
         // Build the retrofit object.
-        Retrofit retrofit = retrofitBuilder.build();
+        Retrofit retrofit = retrofitBuilder.addConverterFactory(GsonConverterFactory.create()).build();
 
         //Create instance for user manager interface and return it.
         UserManagerInterface userManagerService = retrofit.create(UserManagerInterface.class);
