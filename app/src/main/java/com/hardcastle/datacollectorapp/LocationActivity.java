@@ -220,40 +220,40 @@ public class LocationActivity extends AppCompatActivity implements OnMapReadyCal
         createLocationCallback();
         createLocationRequest();
         buildLocationSettingsRequest();
-
-
     }
 
     private void getPointerLists() {
 
-
-        Call<ArrayList<PointDetailsModel>> call = UserManager.getUserManagerService(null).getPoints(userDetails.getUSER_ID());
+        showProgressDialog();
+        Call<PointsDTO> call = UserManager.getUserManagerService(null).getPoints(userDetails.getUSER_ID());
 
         // Create a Callback object, because we do not set JSON converter, so the return object is ResponseBody be default.
-        retrofit2.Callback<ArrayList<PointDetailsModel>> callback = new Callback<ArrayList<PointDetailsModel>>() {
+        retrofit2.Callback<PointsDTO> callback = new Callback<PointsDTO>() {
 
             // When server response.
             @Override
-            public void onResponse(Call<ArrayList<PointDetailsModel>> call, Response<ArrayList<PointDetailsModel>> response) {
+            public void onResponse(Call<PointsDTO> call, Response<PointsDTO> response) {
 
                 hideProgressDialog();
 
                 StringBuffer messageBuffer = new StringBuffer();
                 int statusCode = response.code();
-                Log.i("Prasann", statusCode + "");
+                Log.i("PrasannLoc", statusCode + "");
+
 
                 // Get return string.
-                ArrayList<PointDetailsModel> returnBody = response.body();
-                //Log.i("PrasannLogin", returnBody.getSTATUS() + "");
+               // ArrayList<PointDetailsModel> returnBody = response.body();
+                //Log.i("statusCode", statusCode + "");
 
-                if (statusCode == 200) {
+                if (response.body().getMESSAGE().equalsIgnoreCase("SUCCESS")) {
                     // messageBuffer.append(registerResponse.getMessage());
                     // Toast.makeText(LocationActivity.this, "Successfully Logged", Toast.LENGTH_SHORT).show();
-                    pointDetailsModelList = new ArrayList<>();
-                    pointDetailsModelList.addAll(returnBody);
-
+                    //pointDetailsModelList = new ArrayList<>();
+                     // pointDetailsModelList.addAll(returnBody);
+                    pointDetailsModelList= response.body().getDATA();
                     for (int i = 0; i < pointDetailsModelList.size(); i++) {
-                        createMarker(pointDetailsModelList.get(i).getLatitude(), pointDetailsModelList.get(i).getLongitude());
+                        createMarker(pointDetailsModelList.get(i).getLATITUDE(), pointDetailsModelList.get(i).getLONGITUDE(), String.valueOf(i));
+
                     }
                 } else {
                     messageBuffer.append("User Login failed.");
@@ -262,7 +262,7 @@ public class LocationActivity extends AppCompatActivity implements OnMapReadyCal
 
 
             @Override
-            public void onFailure(Call<ArrayList<PointDetailsModel>> call, Throwable t) {
+            public void onFailure(Call<PointsDTO> call, Throwable t) {
                 hideProgressDialog();
                 call.cancel();
                 Log.i("uvsjd", t.getMessage());
@@ -532,13 +532,14 @@ public class LocationActivity extends AppCompatActivity implements OnMapReadyCal
         }
     }
 
-    protected Marker createMarker(String latitude, String longitude) {
+    protected Marker createMarker(String latitude, String longitude,String position) {
         double lat = Double.parseDouble(latitude);
         double longi = Double.parseDouble(longitude);
         myMarker = mMap.addMarker(new MarkerOptions()
                 .position(new LatLng(lat, longi))
                 /*  .title(title)
                   .snippet(snippet)*/
+                .snippet(position)
                 .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_place_marker)));
         return myMarker;
     }
@@ -574,9 +575,13 @@ public class LocationActivity extends AppCompatActivity implements OnMapReadyCal
             startLocationUpdates();
         } else if (!checkPermissions()) {
             requestPermissions();
+
         }
         updateUI();
 
+        if (mMap!=null){
+            mMap.clear();
+        }
         getPointerLists();
     }
 
@@ -698,7 +703,7 @@ public class LocationActivity extends AppCompatActivity implements OnMapReadyCal
     }
 
     @Override
-    public void onMapReady(GoogleMap googleMap) {
+    public void onMapReady(final GoogleMap googleMap) {
         mMap = googleMap;
         // check if map is created successfully or not
         if (googleMap != null) {
@@ -778,6 +783,15 @@ public class LocationActivity extends AppCompatActivity implements OnMapReadyCal
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
+               Toast.makeText(LocationActivity.this, "Comments : "+pointDetailsModelList.get(Integer.parseInt(marker.getSnippet())).getCOMMENTS(), Toast.LENGTH_SHORT).show();
+
+
+               PointDetailsModel markerModel=pointDetailsModelList.get(Integer.parseInt(marker.getSnippet()));
+                MarkerInfoWindowAdapter markerInfoWindowAdapter = new MarkerInfoWindowAdapter(getApplicationContext(),markerModel);
+                googleMap.setInfoWindowAdapter(markerInfoWindowAdapter);
+                MarkerOptions markerOptions = new MarkerOptions();
+                marker.showInfoWindow();
+
                 return false;
             }
         });
@@ -815,8 +829,8 @@ public class LocationActivity extends AppCompatActivity implements OnMapReadyCal
                     Intent intent = new Intent(LocationActivity.this, AddPointDetailsActivity.class);
                     intent.putExtra("userId", userDetails.getUSER_ID());
 
-                    intent.putExtra("Latitude", latLng.latitude);
-                    intent.putExtra("Longitude", latLng.longitude);
+                    intent.putExtra("Latitude", latLng.latitude+"");
+                    intent.putExtra("Longitude", latLng.longitude+"");
 
                     startActivity(intent);
                     //selectedPoint=null;
@@ -906,9 +920,12 @@ public class LocationActivity extends AppCompatActivity implements OnMapReadyCal
 
             if (POINTS != null && val != null) {
                 mMap.clear();
+                getPointerLists();
                 //polygon.remove();
                 //finalPoints.clear();
                 // val.clear();
+
+                //getPointerLists();
             }
             return true;
         }

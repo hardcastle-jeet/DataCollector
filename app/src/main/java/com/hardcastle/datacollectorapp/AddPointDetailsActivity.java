@@ -74,7 +74,7 @@ public class AddPointDetailsActivity extends AppCompatActivity {
     private static final int RC_PERMISSIONS = 1;
     Bitmap myBitmap;
     Uri picUri;
-    String encodedImage;
+    String encodedImage=null;
     JSONObject jsonObject;
 
     int SELECT_PICTURE = 101;
@@ -97,7 +97,7 @@ public class AddPointDetailsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_point_details);
 
-        // selectedPoint = getIntent().getParcelableExtra("Point");
+         //selectedPoint = getIntent().getParcelableExtra("Point");
         //Toast.makeText(this, "" + selectedPoint.getLatLng().latitude + " ---" + selectedPoint.getLatLng().longitude, Toast.LENGTH_SHORT).show();
 
         userId=getIntent().getStringExtra("userId");
@@ -108,61 +108,70 @@ public class AddPointDetailsActivity extends AppCompatActivity {
         etComment = findViewById(R.id.et_comments);
 
         imageView=findViewById(R.id.imageView);
-        selectedPoint.setAddress(etAddress.getText().toString());
-        selectedPoint.setComment(etComment.getText().toString());
+         selectedPoint=new PointDetailsModel();
+        selectedPoint.setLATITUDE(latitude);
+        selectedPoint.setLONGITUDE(longitude);
+        selectedPoint.setADDRESS(etAddress.getText().toString());
+        selectedPoint.setCOMMENTS(etComment.getText().toString());
         if(progressDialog == null) {
             progressDialog = new ProgressDialog(this);
         }
     }
 
     public void onSave(View view) {
-        showProgressDialog();
-        String addressValue=etAddress.getText().toString();
-         String latValue= String.valueOf(latitude);
-         String longValue= String.valueOf(longitude);
-         String commentValue=etComment.getText().toString();
-         String fileUploadvalue=encodedImage;
-         String userIdValue=userId;
+        if (etAddress.getText().toString().trim().equalsIgnoreCase("")){
+            etAddress.setError("Please enter adress");
+        }else  if (etComment.getText().toString().trim().equalsIgnoreCase("")){
+            etComment.setError("Please enter comment");
+        }else {
+            showProgressDialog();
+            String addressValue = etAddress.getText().toString();
+            String latValue = String.valueOf(latitude);
+            String longValue = String.valueOf(longitude);
+            String commentValue = etComment.getText().toString();
+            String fileUploadvalue = encodedImage;
+            String userIdValue = userId;
 
-        //loginProcessWithRetrofit(et_username.getText().toString(),et_password.getText().toString());
-        Call<ResponseBody> call = UserManager.getUserManagerService(null).AddUser(addressValue,latValue,longValue,commentValue,fileUploadvalue,userIdValue);
+            //loginProcessWithRetrofit(et_username.getText().toString(),et_password.getText().toString());
+            Call<ResponseBody> call = UserManager.getUserManagerService(null).AddPoint(addressValue, latValue, longValue, commentValue, fileUploadvalue, userIdValue);
 
-        // Create a Callback object, because we do not set JSON converter, so the return object is ResponseBody be default.
-        retrofit2.Callback<ResponseBody> callback = new Callback<ResponseBody>() {
+            // Create a Callback object, because we do not set JSON converter, so the return object is ResponseBody be default.
+            retrofit2.Callback<ResponseBody> callback = new Callback<ResponseBody>() {
 
-            // When server response.
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                // When server response.
+                @Override
+                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
 
-                hideProgressDialog();
+                    hideProgressDialog();
 
-                StringBuffer messageBuffer = new StringBuffer();
-                int statusCode = response.code();
-                Log.i("Prasann", statusCode + "");
+                    StringBuffer messageBuffer = new StringBuffer();
+                    int statusCode = response.code();
+                    Log.i("Prasann", statusCode + "");
 
-                // Get return string.
-                ResponseBody returnBody = response.body();
-               // Log.i("PrasannLogin", returnBody.getSTATUS() + "");
+                    // Get return string.
+                    ResponseBody returnBody = response.body();
+                    // Log.i("PrasannLogin", returnBody.getSTATUS() + "");
 
-                if (statusCode==200) {
-                    // messageBuffer.append(registerResponse.getMessage());
-                    Toast.makeText(AddPointDetailsActivity.this, "Successfully Adeded", Toast.LENGTH_SHORT).show();
-                    finish();
-                }  else {
-                    Toast.makeText(AddPointDetailsActivity.this, "Failed", Toast.LENGTH_SHORT).show();
+                    if (statusCode == 200) {
+                        // messageBuffer.append(registerResponse.getMessage());
+                        Toast.makeText(AddPointDetailsActivity.this, "Successfully Adeded", Toast.LENGTH_SHORT).show();
+                        finish();
+                    } else {
+                        Toast.makeText(AddPointDetailsActivity.this, "Failed", Toast.LENGTH_SHORT).show();
 
+                    }
                 }
-            }
 
 
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
-                hideProgressDialog();
-                call.cancel();
-                Log.i("uvsjd",t.getMessage());
-            }
-        };
-        call.enqueue(callback);
+                @Override
+                public void onFailure(Call<ResponseBody> call, Throwable t) {
+                    hideProgressDialog();
+                    call.cancel();
+                    Log.i("uvsjd", t.getMessage());
+                }
+            };
+            call.enqueue(callback);
+        }
     }
 
 
@@ -395,14 +404,14 @@ public class AddPointDetailsActivity extends AppCompatActivity {
                     selectedImageBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), selectedImageUri);
                 } catch (IOException e) {
                     e.printStackTrace();
+                }if (selectedImageBitmap!=null) {
+                    imageView.setImageBitmap(selectedImageBitmap);
+                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                    selectedImageBitmap.compress(Bitmap.CompressFormat.JPEG, 50, byteArrayOutputStream);
+                    byte[] byteArrayImage = byteArrayOutputStream.toByteArray();
+                    encodedImage = Base64.encodeToString(byteArrayImage, Base64.DEFAULT);
+                    new UploadImages().execute();
                 }
-                imageView.setImageBitmap(selectedImageBitmap);
-                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                selectedImageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
-                byte[] byteArrayImage = byteArrayOutputStream.toByteArray();
-                encodedImage = Base64.encodeToString(byteArrayImage, Base64.DEFAULT);
-                Log.d("Vicky","I'm in.");
-                new UploadImages().execute();
             }
         }
     }

@@ -3,6 +3,7 @@ package com.hardcastle.datacollectorapp.RetrofitBasics;
 
 import com.hardcastle.datacollectorapp.Login;
 import com.hardcastle.datacollectorapp.PointDetailsModel;
+import com.hardcastle.datacollectorapp.PointsDTO;
 
 import java.util.ArrayList;
 
@@ -43,13 +44,13 @@ public interface UserManagerInterface {
 */
 
     @FormUrlEncoded
-    @POST("getPoints.php/")
-    public Call<ArrayList<PointDetailsModel>> getPoints(@Field("USER_ID") String userIdValue);
+    @POST("get_point_details.php/")
+    public Call<PointsDTO> getPoints(@Field("ADMIN_ID") String userIdValue);
 
     @FormUrlEncoded
     @POST("add_point_details.php/")
-    public Call<ResponseBody> AddUser(@Field("ADDRESS") String addressValue,
-                                   @Field("LATITUDE") String latValue,
+    public Call<ResponseBody> AddPoint(@Field("ADDRESS") String addressValue,
+                                      @Field("LATITUDE") String latValue,
                                       @Field("LONGITUDE") String longValue,
                                       @Field("COMMENTS") String commentValue,
                                       @Field("UPLOAD_FILE")  String fileUploadvalue,

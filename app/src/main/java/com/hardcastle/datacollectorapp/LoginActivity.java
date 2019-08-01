@@ -1,7 +1,14 @@
 package com.hardcastle.datacollectorapp;
 
+import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.provider.Settings;
+import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -52,6 +59,10 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         if(progressDialog == null) {
             progressDialog = new ProgressDialog(this);
         }
+
+        if (!checkPermissions()){
+            requestPermissions();
+        }
     }
     @Override
     public void onClick(View v) {
@@ -95,9 +106,9 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                             UserDetails  userDetails=returnBody.getDATA().get(0);
                             loginIntent.putExtra("Data",userDetails);
                             startActivity(loginIntent);
+                            finish();
                         }  else {
-                            messageBuffer.append("User Login failed.");
-                        }
+                            Toast.makeText(LoginActivity.this, "User Login failed.", Toast.LENGTH_SHORT).show();                        }
                     }
 
 
@@ -105,6 +116,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 public void onFailure(Call<UserDTO> call, Throwable t) {
                     hideProgressDialog();
                     call.cancel();
+                    Toast.makeText(LoginActivity.this, t.getMessage(), Toast.LENGTH_SHORT).show();
                     Log.i("uvsjd",t.getMessage());
                 }
             };
@@ -126,50 +138,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
                 }
 
-
-
-
-
-                private void loginProcessWithRetrofit(final String email, String password) {
-                    ApiInterface mApiService = this.getInterfaceService();
-                    Call<UserDTO> mService = mApiService.authenticate(email, password);
-                    mService.enqueue(new Callback<UserDTO>() {
-                        @Override
-                        public void onResponse(Call<UserDTO> call, Response<UserDTO> response) {
-                            UserDTO mLoginObject = response.body();
-                            String returnedResponse = mLoginObject.getSTATUS();
-
-                            Log.i("PrasStatus",returnedResponse  );
-                            Toast.makeText(LoginActivity.this, "Returned " + returnedResponse, Toast.LENGTH_LONG).show();
-                            //showProgress(false);
-                            if (returnedResponse.trim().equals("1")) {
-                                // redirect to Main Activity page
-                                Intent loginIntent = new Intent(LoginActivity.this, MainActivity.class);
-                                loginIntent.putExtra("EMAIL", email);
-                                startActivity(loginIntent);
-                            }
-
-                        }
-
-                        @Override
-                        public void onFailure(Call<UserDTO> call, Throwable t) {
-                            call.cancel();
-                            Log.i("jeet",t.getMessage());
-                            Toast.makeText(LoginActivity.this, "Please check your network connection and internet permission", Toast.LENGTH_LONG).show();
-                        }
-                    });
-                }
-
-                private ApiInterface getInterfaceService() {
-                    Retrofit retrofit = new Retrofit.Builder()
-                            .baseUrl(BASE_URL)
-                            .addConverterFactory(GsonConverterFactory.create())
-                            .build();
-                    final ApiInterface mInterfaceService = retrofit.create(ApiInterface.class);
-                    return mInterfaceService;
-                }
-
-
     /* Show progress dialog. */
     private void showProgressDialog()
     {
@@ -190,4 +158,94 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         progressDialog.hide();
     }
 
+
+    private boolean checkPermissions() {
+        int permissionState = ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION);
+        return permissionState == PackageManager.PERMISSION_GRANTED;
+    }
+
+
+    private void requestPermissions() {
+        boolean shouldProvideRationale =
+                ActivityCompat.shouldShowRequestPermissionRationale(this,
+                        Manifest.permission.ACCESS_FINE_LOCATION);
+
+        // Provide an additional rationale to the user. This would happen if the user denied the
+        // request previously, but didn't check the "Don't ask again" checkbox.
+        if (shouldProvideRationale) {
+            showSnackbar(11,
+                    android.R.string.ok, new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            // Request permission
+
+                            ActivityCompat.requestPermissions(LoginActivity.this,
+                                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                                    REQUEST_PERMISSIONS_REQUEST_CODE);
+                        }
+                    });
+        } else {
+            // Request permission. It's possible this can be auto answered if device policy
+            // sets the permission in a given state or the user denied the permission
+            // previously and checked "Never ask again".
+            ActivityCompat.requestPermissions(LoginActivity.this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    REQUEST_PERMISSIONS_REQUEST_CODE);
+        }
+    }
+    private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
+
+    /**
+     * Callback received when a permissions request has been completed.
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        if (requestCode == REQUEST_PERMISSIONS_REQUEST_CODE) {
+            if (grantResults.length <= 0) {
+                // If user interaction was interrupted, the permission request is cancelled and you
+                // receive empty arrays.
+            } else if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+            } else {
+                // Permission denied.
+
+                // Notify the user via a SnackBar that they have rejected a core permission for the
+                // app, which makes the Activity useless. In a real app, core permissions would
+                // typically be best requested during a welcome-screen flow.
+
+                // Additionally, it is important to remember that a permission might have been
+                // rejected without asking the user for permission (device policy or "Never ask
+                // again" prompts). Therefore, a user interface affordance is typically implemented
+                // when permissions are denied. Otherwise, your app could appear unresponsive to
+                // touches or interactions which have required permissions.
+                showSnackbar(11,
+                        10, new View.OnClickListener() {
+                            @Override
+
+                            public void onClick(View view) {
+
+                                // Build intent that displays the App settings screen.
+                                Intent intent = new Intent();
+                                intent.setAction(
+                                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                Uri uri = Uri.fromParts("package",
+                                        BuildConfig.APPLICATION_ID, null);
+                                intent.setData(uri);
+                                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(intent);
+                            }
+                        });
+            }
+        }
+    }
+    private void showSnackbar(final int mainTextStringId, final int actionStringId,
+                              View.OnClickListener listener) {
+        Snackbar.make(
+                findViewById(android.R.id.content),
+                getString(mainTextStringId),
+                Snackbar.LENGTH_INDEFINITE)
+                .setAction(getString(actionStringId), listener).show();
+    }
 }

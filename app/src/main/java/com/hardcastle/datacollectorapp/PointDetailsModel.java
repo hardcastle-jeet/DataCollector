@@ -6,75 +6,64 @@ import android.os.Parcelable;
 import com.google.android.gms.maps.model.LatLng;
 
 public class PointDetailsModel implements Parcelable {
-
-
-    String address,latitude,longitude,comment,file,userId;
-
-
-    public PointDetailsModel(String address, String latitude, String longitude, String comment, String file, String userId) {
-        this.address = address;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.comment = comment;
-        this.file = file;
-        this.userId = userId;
+    public PointDetailsModel(String ADDRESS, String LATITUDE, String LONGITUDE, String COMMENT, String IMAGE_URL, String USER_ID) {
+        this.ADDRESS = ADDRESS;
+        this.LATITUDE = LATITUDE;
+        this.LONGITUDE = LONGITUDE;
+        this.COMMENT = COMMENT;
+        this.IMAGE_URL = IMAGE_URL;
+        this.USER_ID = USER_ID;
     }
 
-    public String getAddress() {
-        return address;
+    public PointDetailsModel() {
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public String getADDRESS() {
+        return ADDRESS;
     }
 
-    public String getLatitude() {
-        return latitude;
+    public void setADDRESS(String ADDRESS) {
+        this.ADDRESS = ADDRESS;
     }
 
-    public void setLatitude(String latitude) {
-        this.latitude = latitude;
+    public String getLATITUDE() {
+        return LATITUDE;
     }
 
-    public String getLongitude() {
-        return longitude;
+    public void setLATITUDE(String LATITUDE) {
+        this.LATITUDE = LATITUDE;
     }
 
-    public void setLongitude(String longitude) {
-        this.longitude = longitude;
+    public String getLONGITUDE() {
+        return LONGITUDE;
     }
 
-    public String getComment() {
-        return comment;
+    public void setLONGITUDE(String LONGITUDE) {
+        this.LONGITUDE = LONGITUDE;
     }
 
-    public void setComment(String comment) {
-        this.comment = comment;
+    public String getCOMMENTS() {
+        return COMMENT;
     }
 
-    public String getFile() {
-        return file;
+    public void setCOMMENTS(String COMMENTS) {
+        this.COMMENT = COMMENTS;
     }
 
-    public void setFile(String file) {
-        this.file = file;
+    public String getUPLOAD_FILE() {
+        return IMAGE_URL;
     }
 
-    public String getUserId() {
-        return userId;
+    public void setUPLOAD_FILE(String UPLOAD_FILE) {
+        this.IMAGE_URL = UPLOAD_FILE;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public String getUSER_ID() {
+        return USER_ID;
     }
 
-    protected PointDetailsModel(Parcel in) {
-        address = in.readString();
-        latitude = in.readString();
-        longitude = in.readString();
-        comment = in.readString();
-        file = in.readString();
-        userId = in.readString();
+    public void setUSER_ID(String USER_ID) {
+        this.USER_ID = USER_ID;
     }
 
     public static final Creator<PointDetailsModel> CREATOR = new Creator<PointDetailsModel>() {
@@ -88,6 +77,13 @@ public class PointDetailsModel implements Parcelable {
             return new PointDetailsModel[size];
         }
     };
+    String ADDRESS, LATITUDE, LONGITUDE, COMMENT, IMAGE_URL, USER_ID;
+
+    public PointDetailsModel(Parcel in) {
+
+
+    }
+
 
     @Override
     public int describeContents() {
@@ -96,11 +92,6 @@ public class PointDetailsModel implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(address);
-        dest.writeString(latitude);
-        dest.writeString(longitude);
-        dest.writeString(comment);
-        dest.writeString(file);
-        dest.writeString(userId);
+
     }
 }
